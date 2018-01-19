@@ -19,7 +19,7 @@
 	},
     "autoload": {
         "psr-4": {
-            "ZN\\": ""
+            "ZN\\Validation\\": ""
         }
     },
 	"minimum-stability": "dev"
