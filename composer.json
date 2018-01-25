@@ -13,9 +13,9 @@
     "require": {
         "php": ">=7.0.0",
         "znframework/package-zerocore": "5.5.*",
-        "znframework/package-captcha": "5.0.*",
-        "znframework/package-storage": "5.0.*",
-        "znframework/package-security": "5.0.*"
+        "znframework/package-captcha": "5.5.*",
+        "znframework/package-storage": "5.5.*",
+        "znframework/package-security": "5.5.*"
 	},
     "autoload": {
         "psr-4": {
