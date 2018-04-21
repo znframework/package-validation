@@ -258,36 +258,6 @@ class Data implements DataInterface
     }
 
     /**
-     * protected minmax
-     * 
-     * @param string $type = 'minchar'
-     * 
-     * @return void
-     */
-    protected function validMinmax($key, $data, $check, $name, $viewName)
-    {
-        if( in_array($key, ['minchar', 'maxchar']) && ! Validator::$key($data, $check) )
-        {
-            $this->setMessages($type, $name, ["%" => $viewName, "#" => $check]);
-        }
-    }
-
-    /**
-     * protected between
-     * 
-     * @param string $type = 'between'
-     * 
-     * @return void
-     */
-    protected function validBetween($key, $data, $check, $name, $viewName)
-    {
-        if( in_array($key, ['between', 'betweenBoth']) && ! Validator::$key($data, $betweenMin = $check[0], $betweenMax = $check[1] ?? 0) )
-        {
-            $this->setMessages($type, $name, ['%' => $viewName, '#' => $betweenMin, '$' => $betweenMax]);
-        }
-    }
-
-    /**
      * protected single in array
      * 
      * @param mixed $key
