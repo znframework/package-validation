@@ -43,13 +43,6 @@ class Data implements DataInterface
     protected $error    = [];
 
     /**
-     * Keeps nval
-     * 
-     * @var array
-     */
-    protected $nval     = [];
-
-    /**
      * Keeps messages
      * 
      * @var array
