@@ -10,11 +10,9 @@
  */
 
 use ZN\Lang;
-use ZN\Security;
 use ZN\Singleton;
 use ZN\Request\Method;
 use ZN\DataTypes\Arrays;
-use ZN\Cryptography\Encode;
 use ZN\Validation\Exception\InvalidArgumentException;
 
 class Data implements DataInterface
