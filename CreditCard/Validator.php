@@ -63,7 +63,7 @@ class Validator implements ValidatorInterface
         ( 
             ! preg_match('/^20\d\d$/', $year)           || 
             ! preg_match('/^(0[1-9]|1[0-2])$/', $month) ||
-            ( $year < date('Y') || $year == date('Y') && $month < date('m') ) 
+            ( $year < date('Y') || ($year <= date('Y') && $month < date('m')) ) 
         ) 
         {
             return false;
