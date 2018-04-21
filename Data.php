@@ -66,10 +66,6 @@ class Data implements DataInterface
     /**
      * @var string
      */
-    protected $config;
-    protected $name;
-    protected $viewName;
-    protected $edit;
     protected $method;
 
    /**
@@ -85,10 +81,14 @@ class Data implements DataInterface
     public function rules(String $name, Array $config = [], $viewName = '', String $met = 'post')
     {
         if( ! in_array($met, $this->options) )
+        {
             throw new InvalidArgumentException(NULL, '4. ');
+        }    
 
-        if( is_array($this->_methodType($name, $met)) )
-            return $this->_multipleRules($name, $config, $viewName, $met);
+        if( is_array($this->setMethodType($name, $met)) )
+        {
+            return $this->setMultipleRules($name, $config, $viewName, $met);
+        }      
 
         $met      = $this->settings['method'] ?? 'post';
         $viewName = $this->settings['value']  ?? $viewName;
@@ -105,57 +105,39 @@ class Data implements DataInterface
         $this->settings = [];
 
         $viewName = $viewName ?: $name;
-        $edit     = $this->_methodType($name, $met);
+        $edit     = $this->setMethodType($name, $met);
 
         if( ! isset($edit) ) return false;
 
-        if( in_array('trim',$config) ) $edit = trim($edit);
+        $this->method = $met;
 
-        if( in_array('nc', $config) )
+        foreach( $config as $key => $val )
         {
-            $secnc = Security\Properties::$ncEncode;
-            $edit  = Security\NastyCode::encode($edit, $secnc['badChars'], $secnc['changeBadChars']);
+            $function = is_numeric($key) ? $val : $key;
+
+            if( $this->isValidatorObject($function) )
+            {
+                if( is_numeric($key) )
+                {
+                    if( is_string($cleanData = Validator::$function($edit)) )
+                    {
+                        $edit = $cleanData;
+                    }
+                    
+                    $this->validInArray($function, $edit, $name, $viewName);
+                }
+                else
+                {
+                    $this->validIssetArray($function, $edit, $val, $name, $viewName);
+                }
+            }    
         }
 
-        if( in_array('html',      $config) ) $edit = Security\Html::encode($edit);
-        if( in_array('xss',       $config) ) $edit = Security\CrossSiteScripting::encode($edit);
-        if( in_array('injection', $config) ) $edit = Security\Injection::encode($edit);
-        if( in_array('script',    $config) ) $edit = Security\Script::encode($edit);
-        if( in_array('php',       $config) ) $edit = Security\PHP::encode($edit);
-
-        $this->nval[$name] = $edit;
-
-        $this->_methodNval($name, $edit, $met);
-
-        $this->config   = $config;
-        $this->edit     = $edit;
-        $this->name     = $name;
-        $this->viewName = $viewName;
-        $this->method   = $met;
-
-        $this->_singleType   (['matchPassword' => 'passwordMatch']);
-        $this->_singleType   (['match'         => 'dataMatch']);
-        $this->_singleInArray('numeric');
-        $this->_singleInArray('phone');
-        $this->_singleInArray('alpha');
-        $this->_singleInArray('alnum');
-        $this->_singleInArray('email');
-        $this->_singleInArray('url');
-        $this->_singleInArray('identity');
-        $this->_singleInArray(['specialChar' => 'noSpecialChar']);
-        $this->_between      ('between');
-        $this->_between      ('betweenBoth');
-        $this->_minmax       ('minchar');
-        $this->_minmax       ('maxchar');
-        $this->_required     ();
-        $this->_captcha      ();
-        $this->_oldPassword  ();
-        $this->_phone        ();
-        $this->_pattern      ();
+        $this->setMethodNewValue($name, $edit, $met);
 
         array_push($this->errors, $this->messages);
 
-        $this->_defaultVariables();
+        $this->defaultVariables();
     }
 
     /**
@@ -196,25 +178,6 @@ class Data implements DataInterface
         }
 
         return ! (Bool) $this->error('string');
-    }
-
-    /**
-     * It keeps the last value of the passed data from the filter.
-     * 
-     * @param string $name
-     * 
-     * @return string
-     */
-    public function nval(String $name)
-    {
-        if( isset($this->nval[$name]) )
-        {
-            return $this->nval[$name];
-        }
-        else
-        {
-            return false;
-        }
     }
 
     /**
@@ -276,7 +239,7 @@ class Data implements DataInterface
      */
     public function postBack(String $name, String $met = 'post')
     {
-        $method = $this->_methodType($name, $met);
+        $method = $this->setMethodType($name, $met);
 
         if( ! isset($method) )
         {
@@ -287,21 +250,11 @@ class Data implements DataInterface
     }
 
     /**
-     * protected pattern
-     * 
-     * @param void
-     * 
-     * @return void
+     * Protected is validator object
      */
-    protected function _pattern()
+    protected function isValidatorObject($object)
     {
-        if( isset($this->config['pattern']) )
-        {
-            if( ! preg_match($this->config['pattern'], $this->edit) )
-            {
-                $this->_messages('pattern', $this->name, $this->viewName);
-            }
-        }
+        return method_exists('ZN\Validation\Validator', $object);
     }
 
     /**
@@ -311,14 +264,11 @@ class Data implements DataInterface
      * 
      * @return void
      */
-    protected function _minmax($type = 'minchar')
+    protected function validMinmax($key, $data, $check, $name, $viewName)
     {
-        if( isset($this->config[$type]) )
+        if( in_array($key, ['minchar', 'maxchar']) && ! Validator::$key($data, $check) )
         {
-            if( ! Validator::$type($this->edit, $this->config[$type]) )
-            {
-                $this->_messages($type, $this->name, ["%" => $this->viewName, "#" => $this->config[$type]]);
-            }
+            $this->setMessages($type, $name, ["%" => $viewName, "#" => $check]);
         }
     }
 
@@ -329,142 +279,53 @@ class Data implements DataInterface
      * 
      * @return void
      */
-    protected function _between($type = 'between')
+    protected function validBetween($key, $data, $check, $name, $viewName)
     {
-        if( $between = ($this->config[$type] ?? NULL) )
+        if( in_array($key, ['between', 'betweenBoth']) && ! Validator::$key($data, $betweenMin = $check[0], $betweenMax = $check[1] ?? 0) )
         {
-            if( ! Validator::$type($this->edit, $betweenMin = $between[0], $betweenMax = $between[1] ?? 0) )
-            {
-                $this->_messages($type, $this->name, ['%' => $this->viewName, '#' => $betweenMin, '$' => $betweenMax]);
-            }
-        }
-    }
-
-    /**
-     * protected phone
-     * 
-     * @param void
-     * 
-     * @return void
-     */
-    protected function _phone()
-    {
-        if( isset($this->config['phone']) )
-        {
-            if( ! Validator::phone($this->edit, $this->config['phone']) )
-            {
-                $this->_messages('phone', $this->name, $this->viewName);
-            }
-        }
-    }
-
-    /**
-     * protected old password
-     * 
-     * @param void
-     * 
-     * @return void
-     */
-    protected function _oldPassword()
-    {
-        if( isset($this->config['oldPassword']) )
-        {
-            $pm = '';
-            $pm = $this->config['oldPassword'];
-
-            if( Encode\SuperAlgorithm::create($this->edit) != $pm )
-            {
-                $this->_messages('oldPasswordMatch', $this->name, $this->viewName);
-            }
-        }
-    }
-
-    /**
-     * protected captcha
-     * 
-     * @param void
-     * 
-     * @return void
-     */
-    protected function _captcha()
-    {
-        if( in_array('captcha', $this->config) )
-        {
-            if( $this->edit !== Singleton::class('ZN\Captcha\Render')->getCode() )
-            {
-                $this->_messages('captchaCode', $this->name, $this->viewName);
-            }
-        }
-    }
-
-    /**
-     * protected required
-     * 
-     * @param void
-     * 
-     * @return void
-     */
-    protected function _required()
-    {
-        if( in_array('required', $this->config) )
-        {
-            if( empty($this->edit) )
-            {
-                $this->_messages('required', $this->name, $this->viewName);
-            }
-        }
-    }
-
-    /**
-     * protected single type
-     * 
-     * @param mixed $type
-     * 
-     * @return void
-     */
-    protected function _singleType($type)
-    {
-        $typeName = $typeMsg = $type;
-
-        if( is_array($type) )
-        {
-            $typeName = key($type);
-            $typeMsg  = current($type);
-        }
-
-        if( isset($this->config[$typeName]) )
-        {
-            $pm = $this->_methodType($this->config[$typeName], $this->method);
-
-            if( $this->edit != $pm )
-            {
-                $this->_messages($typeMsg, $this->name, $this->viewName);
-            }
+            $this->setMessages($type, $name, ['%' => $viewName, '#' => $betweenMin, '$' => $betweenMax]);
         }
     }
 
     /**
      * protected single in array
      * 
-     * @param mixed $type
+     * @param mixed $key
      * 
      * @return void
      */
-    protected function _singleInArray($type)
+    protected function validInArray($key, $data, $name, $viewName)
     {
-        $typeName = $typeMsg = $type;
-
-        if( is_array($type) )
+        if( ! Validator::$key($data) )
         {
-            $typeName = key($type);
-            $typeMsg  = current($type);
+            $this->setMessages($key, $name, $viewName);
         }
+    }
 
-        if( in_array($typeName, $this->config) )
+    /**
+     * protected single isset array
+     * 
+     * @param mixed $key
+     * 
+     * @return void
+     */
+    protected function validIssetArray($key, $data, $check, $name, $viewName)
+    {
+        $data = $this->setMethodType($name, $this->method);
+     
+        if( ! Validator::$key($data, ...(array) $check) )
         {
-            if( ! Validator::$typeName($this->edit) )
+            if( in_array($key, ['minchar', 'maxchar']) )
             {
-                $this->_messages($typeMsg, $this->name, $this->viewName);
+                $this->setMessages($key, $name, ["%" => $viewName, "#" => $check]);
+            }
+            elseif( in_array($key, ['between', 'betweenBoth']) )
+            {
+                $this->setMessages($key, $name, ['%' => $viewName, '#' => $check[0], '$' => $check[1] ?? 0]);
+            }
+            else
+            {
+                $this->setMessages($key, $name, $viewName);
             }
         }
     }
@@ -478,7 +339,7 @@ class Data implements DataInterface
      * 
      * @return void
      */
-    protected function _messages($type, $name, $viewName)
+    protected function setMessages($type, $name, $viewName)
     {
         $message = Lang::select('ViewObjects', 'validation:'.$type, $viewName);
 
@@ -493,14 +354,10 @@ class Data implements DataInterface
      * 
      * @return void
      */
-    protected function _defaultVariables()
+    protected function defaultVariables()
     {
         $this->messages = [];
         $this->index    = 0;
-        $this->config   = NULL;
-        $this->edit     = NULL;
-        $this->name     = NULL;
-        $this->viewName = NULL;
         $this->method   = NULL;
     }
 
@@ -512,14 +369,14 @@ class Data implements DataInterface
      * 
      * @return mixed
      */
-    protected function _methodType($name, $met)
+    protected function setMethodType($name, $met)
     {
         if( $met === "data" )
         {
             return $name;
         }
 
-        return Method::$met($name);
+        return Method::$met($name) ?: $name;
     }
 
     /**
@@ -531,7 +388,7 @@ class Data implements DataInterface
      * 
      * @return mixed
      */
-    protected function _methodNval($name, $val, $met)
+    protected function setMethodNewValue($name, $val, $met)
     {
         if( $met === "data" )
         {
@@ -551,7 +408,7 @@ class Data implements DataInterface
      * 
      * @return void
      */
-    protected function _multipleRules(String $name, Array $config = [], $viewName = '', String $met = 'post')
+    protected function setMultipleRules(String $name, Array $config = [], $viewName = '', String $met = 'post')
     {
         $postNames = [];
         $postKey   = '';
