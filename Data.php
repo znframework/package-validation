@@ -91,8 +91,7 @@ class Data implements DataInterface
             $config,
             $this->settings['config']   ?? [],
             $this->settings['validate'] ?? [],
-            $this->settings['secure']   ?? [],
-            $this->settings['pattern']  ?? []
+            $this->settings['secure']   ?? []
         );
 
         $this->settings = [];
