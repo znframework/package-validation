@@ -110,12 +110,7 @@ class Data implements DataInterface
             if( $this->isValidatorObject($function) )
             {
                 if( is_numeric($key) )
-                {
-                    if( is_string($cleanData = Validator::$function($edit)) )
-                    {
-                        $edit = $cleanData;
-                    }
-                    
+                {  
                     $this->validInArray($function, $edit, $name, $viewName);
                 }
                 else
@@ -256,9 +251,13 @@ class Data implements DataInterface
      * 
      * @return void
      */
-    protected function validInArray($key, $data, $name, $viewName)
+    protected function validInArray($key, &$data, $name, $viewName)
     {
-        if( ! Validator::$key($data) )
+        if( is_string($stringCleanData = Validator::$key($data)) )
+        {
+            $data = $stringCleanData;
+        }
+        elseif( $stringCleanData === false )
         {
             $this->setMessages($key, $name, $viewName);
         }
