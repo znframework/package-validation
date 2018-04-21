@@ -145,7 +145,7 @@ class Validator implements ValidatorInterface
     }
 
     /**
-     * Protected valid lunh algorithm
+     * Protected valid luhn algorithm
      * 
      * @param string $number
      * @param string $type
