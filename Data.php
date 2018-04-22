@@ -289,48 +289,26 @@ class Data implements DataInterface
     {
         $data = $this->setMethodType($name, $this->method);
      
-        if( ! Validator::$key($data, ...(array) $check) )
+        if( ! Validator::$key($data, ...($check = (array) $check)) )
         {
-            if( in_array($key, ['minchar', 'maxchar']) )
-            {
-                $this->setMessages($key, $name, ["%" => $viewName, "#" => $check]);
-            }
-            elseif( in_array($key, ['between', 'betweenBoth']) )
-            {
-                $this->setMessages($key, $name, ['%' => $viewName, '#' => $check[0], '$' => $check[1] ?? 0]);
-            }
-            else
-            {
-                $this->setMessages($key, $name, $viewName);
-            }
+            $this->setMessages($key, $name, $check, $viewName);
         }
     }
 
     /**
      * protected messages
-     * 
-     * @param string $type
-     * @param string $name
-     * @param string $viewName
-     * 
-     * @return void
      */
-    protected function setMessages($type, $name, $viewName)
+    protected function setMessages($type, $name, $check, $viewName)
     {
+        $check = $this->replaceParameters($check, $name, $viewName);
+        
         if( $userMessage = ($this->userMessages[$type] ?? NULL) )
         {
-            if( is_array($viewName) )
-            {
-                $message = $this->multiReplaceUserMessage($userMessage, $viewName);
-            }
-            else
-            {
-                $message = $this->singleReplaceUserMessage($userMessage, $viewName);
-            }  
+            $message = $this->replaceUserMessage($check, $userMessage);
         }
         else
         {
-            $message = Lang::select('ViewObjects', 'validation:'.$type, $viewName);
+            $message = Lang::select('ViewObjects', 'validation:'.$type, $check);
         }
 
         $this->messages[$this->index] = $message.'<br>'; $this->index++;
@@ -338,19 +316,29 @@ class Data implements DataInterface
     }
 
     /**
-     * Protected multi replace user message
+     * Protected replace user message
      */
-    protected function multiReplaceUserMessage($userMessage, $viewName)
+    protected function replaceUserMessage($check, $userMessage)
     {
-        return str_replace(array_keys($viewName), array_values($viewName), $userMessage);
+        return str_replace(array_keys($check), array_values($check), $userMessage);
     }
 
     /**
-     * Protected single replace user message
+     * Protected replace parameters
      */
-    protected function singleReplaceUserMessage($userMessage, $viewName)
+    protected function replaceParameters($check, $name, $viewName)
     {
-        return str_replace('%', $viewName, $userMessage);
+        $newCheck = [];
+
+        foreach( $check as $key => $p )
+        {
+            $newCheck[] = ':p' . ($key + 1);
+        }
+
+        array_unshift($newCheck, ':name');
+        array_unshift($check, $viewName ?? $name);
+
+        return array_combine($newCheck, $check);
     }
 
     /**
