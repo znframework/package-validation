@@ -116,11 +116,11 @@ class Data implements DataInterface
             {
                 if( is_numeric($key) )
                 {  
-                    $this->validInArray($function, $edit, $name, $viewName);
+                    $this->validInArray($function, $edit, $name, [':name' => $viewName]);
                 }
                 else
                 {
-                    $this->validIssetArray($function, $edit, $val, $name, $viewName);
+                    $this->validIssetArray($function, $edit, (array) $val, $name, $viewName);
                 }
             }    
         }
@@ -289,19 +289,17 @@ class Data implements DataInterface
     {
         $data = $this->setMethodType($name, $this->method);
      
-        if( ! Validator::$key($data, ...($check = (array) $check)) )
+        if( ! Validator::$key($data, ...$check) )
         {
-            $this->setMessages($key, $name, $check, $viewName);
+            $this->setMessages($key, $name, $this->replaceParameters($check, $viewName));
         }
     }
 
     /**
      * protected messages
      */
-    protected function setMessages($type, $name, $check, $viewName)
+    protected function setMessages($type, $name, $check)
     {
-        $check = $this->replaceParameters($check, $name, $viewName);
-        
         if( $userMessage = ($this->userMessages[$type] ?? NULL) )
         {
             $message = $this->replaceUserMessage($check, $userMessage);
@@ -326,7 +324,7 @@ class Data implements DataInterface
     /**
      * Protected replace parameters
      */
-    protected function replaceParameters($check, $name, $viewName)
+    protected function replaceParameters($check, $viewName)
     {
         $newCheck = [];
 
@@ -336,7 +334,7 @@ class Data implements DataInterface
         }
 
         array_unshift($newCheck, ':name');
-        array_unshift($check, $viewName ?? $name);
+        array_unshift($check, $viewName);
 
         return array_combine($newCheck, $check);
     }
