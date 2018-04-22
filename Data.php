@@ -48,6 +48,13 @@ class Data implements DataInterface
     protected $messages = [];
 
     /**
+     * Keeps user messages
+     * 
+     * @var array
+     */
+    protected $userMessages = [];
+
+    /**
      * Keeps index
      * 
      * @var int
@@ -59,7 +66,7 @@ class Data implements DataInterface
      */
     protected $method;
 
-   /**
+    /**
      * Defines rules for control of the grant.
      * 
      * @param string $name
@@ -123,6 +130,16 @@ class Data implements DataInterface
         array_push($this->errors, $this->messages);
 
         $this->defaultVariables();
+    }
+
+    /**
+     * Sets user messages
+     * 
+     * @param array $settings
+     */
+    public function messages(Array $settings)
+    {
+        $this->userMessages = $settings;
     }
 
     /**
@@ -300,10 +317,40 @@ class Data implements DataInterface
      */
     protected function setMessages($type, $name, $viewName)
     {
-        $message = Lang::select('ViewObjects', 'validation:'.$type, $viewName);
+        if( $userMessage = ($this->userMessages[$type] ?? NULL) )
+        {
+            if( is_array($viewName) )
+            {
+                $message = $this->multiReplaceUserMessage($userMessage, $viewName);
+            }
+            else
+            {
+                $message = $this->singleReplaceUserMessage($userMessage, $viewName);
+            }  
+        }
+        else
+        {
+            $message = Lang::select('ViewObjects', 'validation:'.$type, $viewName);
+        }
 
         $this->messages[$this->index] = $message.'<br>'; $this->index++;
         $this->error[$name]           = $message;
+    }
+
+    /**
+     * Protected multi replace user message
+     */
+    protected function multiReplaceUserMessage($userMessage, $viewName)
+    {
+        return str_replace(array_keys($viewName), array_values($viewName), $userMessage);
+    }
+
+    /**
+     * Protected single replace user message
+     */
+    protected function singleReplaceUserMessage($userMessage, $viewName)
+    {
+        return str_replace('%', $viewName, $userMessage);
     }
 
     /**
