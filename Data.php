@@ -189,7 +189,7 @@ class Data implements DataInterface
      */
     public function error(String $name = 'array')
     {
-        if( $name === "string" || $name === "array" || $name === "echo" )
+        if( $name === 'string' || $name === 'array' || $name === 'echo' )
         {
             if( count($this->errors) > 0 )
             {
@@ -198,19 +198,19 @@ class Data implements DataInterface
 
                 foreach( $this->errors as $key => $value )
                 {
-                    if( is_array($value) )foreach($value as $k => $val)
+                    if( is_array($value) ) foreach($value as $k => $val)
                     {
                         $result .= $val;
-                        $resultArray[] = str_replace("<br>", '', $val);
+                        $resultArray[] = str_replace('<br>', '', $val);
                     }
                 }
 
-                if( $name === "string" || $name === "echo" )
+                if( $name === 'string' || $name === 'echo' )
                 {
                     return $result;
                 }
 
-                if( $name === "array")
+                if( $name === 'array')
                 {
                     return $resultArray;
                 }
@@ -363,7 +363,7 @@ class Data implements DataInterface
      */
     protected function setMethodType($name, $met)
     {
-        if( $met === "data" )
+        if( $met === 'data' )
         {
             return $name;
         }
@@ -382,7 +382,7 @@ class Data implements DataInterface
      */
     protected function setMethodNewValue($name, $val, $met)
     {
-        if( $met === "data" )
+        if( $met === 'data' )
         {
             return;
         }
