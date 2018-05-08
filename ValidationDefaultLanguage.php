@@ -18,10 +18,10 @@ class ValidationDefaultLanguage
 {
     /*
     |--------------------------------------------------------------------------
-    | Upload
+    | Validation
     |--------------------------------------------------------------------------
     |
-    | The language of the Upload library.
+    | The language of the Validation library.
     |
     */
 
