@@ -33,7 +33,7 @@ Post::username('ExampleUser');
 Post::password('1234');
 
 Validation::rules('username', ['required', 'email'], 'Username:');
-Validation::rules('password', ['required', 'minchar' => 8, 'maxhar' => 32], 'Username:');
+Validation::rules('password', ['required', 'minchar' => 8, 'maxhar' => 32], 'Password:');
 
 Output::display(Validation::error());
 ```
