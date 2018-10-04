@@ -153,40 +153,42 @@ class Data implements DataInterface
      * It checks the data.
      * 
      * @param string $submit = NULL
+     * @param string &$error = NULL
      * 
      * @return bool
      */
-    public function check(String $submit = 'all') : Bool
+    public function check(String $submit = 'all', &$error = NULL) : Bool
     {
         $session = Singleton::class('ZN\Storage\Session');
-
+        
+        $rules  = $session->FormValidationRules();
         $method = $session->FormValidationMethod() ?: 'post';
 
-        if( $submit !== NULL && ! $method::$submit() ) 
+        if( ($submit !== NULL && ! $method::$submit()) || empty($rules) ) 
         {
+            $this->errors[] = ['Rule check error!'];
+
             return false;
         }
         
-        $rules = $session->FormValidationRules();
-
         if( is_array($rules) )
         {
-            $session->delete('FormValidationRules');
-            $session->delete('FormValidationMethod');
-
             foreach( $rules as $name => $rule )
             {
-                $value = $rule['value'] ?? $name;
+                if( isset($method::all()[$name]) )
+                {
+                    $value = $rule['value'] ?? $name;
                 
-                unset($rule['value']);
-
-                $rule = Arrays\Unidimensional::do($rule);
-         
-                $this->rules($name, $rule, $value, $method);
+                    unset($rule['value']);
+    
+                    $rule = Arrays\Unidimensional::do($rule);
+             
+                    $this->rules($name, $rule, $value, $method);
+                } 
             } 
         }
 
-        return ! (Bool) $this->error('string');
+        return ! (Bool) ($error = $this->error('string'));
     }
 
     /**
