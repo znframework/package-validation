@@ -163,6 +163,48 @@ class Validator implements ValidatorInterface
     }
 
     /**
+     * Answer control
+     * 
+     * @param string $data
+     * 
+     * @return bool
+     */
+    public static function answer(String $data) : Bool
+    {
+        if( empty($data) )
+        {
+            return false;
+        }
+        
+        return $data == strtolower($_SESSION[md5('answerToQuestion')] ?? '');
+    }
+
+    /**
+     * Question
+     * 
+     * @array $question
+     * 
+     * @return string
+     */
+    public static function question(Array $questions = [])
+    {
+        if( empty($questions) )
+        {
+            $question = rand(1, 9) . ' ' . ['*', '+'][rand(0, 1)] . ' ' . rand(1, 9);
+
+            $_SESSION[md5('answerToQuestion')] = eval('return ' . $question . ';');
+
+            return $question;
+        }
+        
+        $index = rand(0, count($questions) - 1);
+
+        $_SESSION[md5('answerToQuestion')] = strtolower(array_values($questions)[$index]);
+
+        return array_keys($questions)[$index];
+    }
+
+    /**
      * Control captcha code.
      * 
      * @param string $data
@@ -175,7 +217,7 @@ class Validator implements ValidatorInterface
         {
             return false;
         }
-
+        
         return $data === Singleton::class('ZN\Captcha\Render')->getCode();
     }
 
@@ -346,11 +388,11 @@ class Validator implements ValidatorInterface
         }
         elseif( $no[9] != $tenth )
         {
-            return false;
+            return false; // @codeCoverageIgnore
         }
         elseif( $no[10] != $elewenth )
         {
-            return false;
+            return false; // @codeCoverageIgnore
         }
         else
         {
